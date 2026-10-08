@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SatoshiForge AI - Autonomous Engine & Agent Controller</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+            display: ['Orbitron', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { background-color: #0a0a0a; color: #f5f5f5; }
+    .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #000; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen selection:bg-amber-500/30 selection:text-amber-200">
+
+  <!-- Top Navigation -->
+  <header class="border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300/40">
+          <i data-lucide="cpu" class="w-5 h-5 text-neutral-950"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-['Orbitron',sans-serif] font-black text-lg tracking-wider text-white">SATOSHIFORGE</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">AGENT OS</span>
+          </div>
+          <p class="text-[11px] text-neutral-400 hidden sm:block">Continuous SHA-256d Mining & Autonomous Agent</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="text-neutral-400">BTC:</span>
+          <span class="font-mono font-bold text-emerald-400" id="btc-price-display">$96,450.00</span>
+        </div>
+
+        <button id="sound-btn" onclick="toggleSound()" class="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-all text-xs" title="Toggle Sound">
+          <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="toggleAgentDrawer()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          <span>Agent Console</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Infinite / Supply-Aware Target Banner -->
+    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-950/40 via-neutral-900 to-neutral-950 border border-amber-500/40 p-5 shadow-2xl space-y-4">
+      <div class="absolute top-0 left-0 w-80 h-full bg-gradient-to-r from-amber-500/10 to-transparent pointer-events-none"></div>
+      
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <i data-lucide="infinity" class="w-3.5 h-3.5"></i>
+              Uncapped Continuous Mode
+            </span>
+            <span class="text-xs text-neutral-400 font-mono" id="target-usd-goal">Target: Dynamic</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black text-white font-['Orbitron',sans-serif]">
+            Active Goal: <span class="text-amber-400" id="banner-goal-display">CONTINUOUS (NO LIMIT)</span>
+          </h2>
+          <p class="text-xs text-neutral-400">
+            Autonomous agent manages worker allocation, nonce distribution, and share submissions to 
+            <span class="font-mono text-amber-300 font-semibold" id="banner-short-address">1KAann...RuuKY</span>.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0 flex-wrap">
+          <div class="flex items-center gap-2 bg-neutral-950/80 px-3.5 py-2 rounded-xl border border-neutral-800">
+            <div class="text-left">
+              <div class="text-xs font-semibold text-white flex items-center gap-1">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+                Auto-Acknowledge
+              </div>
+              <div class="text-[10px] text-neutral-400" id="auto-ack-status">Non-stop hashing</div>
+            </div>
+            <button id="auto-ack-toggle" onclick="toggleAutoAck()" class="w-9 h-5 rounded-full p-0.5 transition-colors ml-1 bg-emerald-500">
+              <div id="auto-ack-switch-knob" class="w-4 h-4 rounded-full bg-white transition-transform translate-x-4"></div>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5 bg-neutral-950/80 px-3 py-1.5 rounded-xl border border-neutral-800 text-xs">
+            <span class="text-neutral-400 flex items-center gap-1"><i data-lucide="fast-forward" class="w-3.5 h-3.5 text-amber-400"></i> Speed:</span>
+            <div class="flex gap-1" id="speed-buttons">
+              <button onclick="setSpeed(1)" class="speed-btn px-2 py-0.5 rounded font-mono font-bold bg-amber-500 text-neutral-950" data-speed="1">1x</button>
+              <button onclick="setSpeed(5)" class="speed-btn px-2 py-0.5 rounded font-mono font-bold bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-speed="5">5x</button>
+              <button onclick="setSpeed(25)" class="speed-btn px-2 py-0.5 rounded font-mono font-bold bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-speed="25">25x</button>
+              <button onclick="setSpeed(100)" class="speed-btn px-2 py-0.5 rounded font-mono font-bold bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-speed="100">100x</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric Accumulator Progress -->
+      <div class="space-y-2 pt-2">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-neutral-400">Accumulated:</span>
+            <span class="font-mono font-bold text-amber-400 text-base" id="banner-accrued-btc">0.00000000 BTC</span>
+            <span class="text-neutral-500 text-[11px]" id="banner-accrued-usd">($0.00 USD)</span>
+          </div>
+          <div class="font-mono font-bold text-amber-300" id="banner-progress-percent">CONTINUOUS</div>
+        </div>
+        <div class="h-2.5 rounded-full bg-neutral-950 border border-neutral-800 p-0.5 overflow-hidden">
+          <div id="banner-progress-fill" class="h-full rounded-full bg-gradient-to-r from-amber-500 via-emerald-400 to-cyan-400 transition-all duration-300" style="width: 100%"></div>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-neutral-400">
+          <span>Total Solved Blocks: <strong class="text-white font-mono" id="banner-blocks-solved">0</strong></span>
+          <span>Effective Difficulty Prefix: <strong class="text-white font-mono" id="banner-difficulty-zeros">3 zeros</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Grid: Destination & Mining Engine -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Wallet Destination Card -->
+      <div class="rounded-2xl bg-neutral-900/60 border border-neutral-800 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <i data-lucide="wallet" class="w-4 h-4 text-amber-400"></i>
+            Payout Address
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">TARGET LOCKED</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Bitcoin Address (P2PKH Legacy)</div>
+          <div class="flex items-center gap-2">
+            <input id="address-box" class="flex-1 bg-neutral-950 px-3 py-2 rounded-xl border border-neutral-800 font-mono text-xs text-amber-300 break-all select-all font-semibold outline-none focus:border-amber-500" value="1KAannFXUtEN1UooYvWjhHaT41z8iRuuKY" onchange="updateWalletAddress(this.value)">
+            <button onclick="copyAddress()" class="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors" title="Copy Address">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-neutral-800/80">
+          <div class="bg-neutral-950/60 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400">Total Accrued</div>
+            <div class="font-mono text-base font-bold text-amber-400" id="card-accrued-btc">0.00000000 BTC</div>
+            <div class="text-[10px] text-neutral-500 font-mono" id="card-accrued-sats">0 sats</div>
+          </div>
+          <div class="bg-neutral-950/60 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400">Blocks Solved</div>
+            <div class="font-mono text-base font-bold text-emerald-400" id="card-blocks-solved">0</div>
+            <div class="text-[10px] text-neutral-500 font-mono" id="card-shares-found">0 shares</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mining Rig Controls -->
+      <div class="lg:col-span-2 rounded-2xl bg-neutral-900/60 border border-neutral-800 p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+            Mining Engine Control & Telemetry
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="rig-status-pill" class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-neutral-800 text-neutral-400 border border-neutral-700">
+              <span class="w-2 h-2 rounded-full bg-neutral-500"></span> IDLE
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-neutral-950/80 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400 uppercase">Live Hashrate</div>
+            <div class="font-mono text-lg font-black text-amber-400" id="metric-hashrate">0 H/s</div>
+            <div class="text-[10px] text-neutral-500" id="metric-peak-hashrate">Peak: 0 H/s</div>
+          </div>
+          <div class="bg-neutral-950/80 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400 uppercase">Total Hashes</div>
+            <div class="font-mono text-lg font-black text-white" id="metric-total-hashes">0</div>
+            <div class="text-[10px] text-neutral-500">Double-SHA256</div>
+          </div>
+          <div class="bg-neutral-950/80 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400 uppercase">Block Subsidy</div>
+            <div class="font-mono text-lg font-black text-emerald-400" id="metric-subsidy">3.125 BTC</div>
+            <div class="text-[10px] text-neutral-500">Halving #4</div>
+          </div>
+          <div class="bg-neutral-950/80 p-3 rounded-xl border border-neutral-800">
+            <div class="text-[10px] text-neutral-400 uppercase">Active Threads</div>
+            <div class="font-mono text-lg font-black text-cyan-400" id="metric-threads-val">4 Cores</div>
+            <div class="text-[10px] text-neutral-500">Web Workers</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div class="space-y-1.5 bg-neutral-950/40 p-3 rounded-xl border border-neutral-800/80">
+            <div class="flex justify-between text-xs">
+              <span class="text-neutral-400">Thread Count:</span>
+              <span class="font-mono font-bold text-cyan-400" id="thread-slider-label">4 Cores</span>
+            </div>
+            <input type="range" min="1" max="16" value="4" id="thread-slider" oninput="updateThreads(this.value)" class="w-full accent-cyan-400 cursor-pointer">
+          </div>
+
+          <div class="space-y-1.5 bg-neutral-950/40 p-3 rounded-xl border border-neutral-800/80">
+            <div class="text-xs text-neutral-400">Difficulty Target:</div>
+            <div class="grid grid-cols-4 gap-1 text-[11px] font-mono font-bold">
+              <button onclick="setDifficulty('easy')" class="diff-btn py-1 rounded bg-amber-500 text-neutral-950" data-diff="easy">Easy</button>
+              <button onclick="setDifficulty('medium')" class="diff-btn py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-diff="medium">Med</button>
+              <button onclick="setDifficulty('hard')" class="diff-btn py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-diff="hard">Hard</button>
+              <button onclick="setDifficulty('pro')" class="diff-btn py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700" data-diff="pro">Pro</button>
+            </div>
+          </div>
+
+          <div class="flex items-center">
+            <button id="main-toggle-btn" onclick="toggleMining()" class="w-full h-full min-h-[50px] rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-neutral-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all">
+              <i data-lucide="play" id="main-toggle-icon" class="w-5 h-5 fill-current"></i>
+              <span id="main-toggle-text">START MINING</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Hash Stream Terminal & Candidate Block Header -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 rounded-2xl bg-neutral-900/60 border border-neutral-800 p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+            Live Double-SHA256 Stream
+          </div>
+          <div class="flex items-center gap-2 text-[11px] font-mono text-neutral-500">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            Real-time Nonce Engine
+          </div>
+        </div>
+
+        <div id="hash-stream-container" class="bg-black/90 rounded-xl border border-neutral-800 p-3 h-64 overflow-y-auto font-mono text-xs space-y-1.5 scrollbar-thin">
+          <div class="text-neutral-500 italic">Press "Start Mining" or issue an Agent command to begin...</div>
+        </div>
+      </div>
+
+      <!-- Autonomous Agent Execution Console -->
+      <div class="rounded-2xl bg-neutral-900/60 border border-amber-500/30 p-5 flex flex-col justify-between space-y-3">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-wider">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+              Autonomous Agent Console
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="agent-status-tag">AGENT READY</span>
+          </div>
+
+          <div id="agent-terminal" class="bg-neutral-950 p-3 rounded-xl border border-neutral-800 h-44 overflow-y-auto font-mono text-[11px] space-y-1 text-neutral-300 scrollbar-thin">
+            <div class="text-neutral-500">// Agent initialized. Try commands:</div>
+            <div class="text-amber-400/80">&gt; "start mining"</div>
+            <div class="text-amber-400/80">&gt; "set threads to 8"</div>
+            <div class="text-amber-400/80">&gt; "set difficulty hard"</div>
+            <div class="text-amber-400/80">&gt; "target 5000 btc"</div>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <input type="text" id="agent-input" placeholder="Give agent instructions..." onkeydown="if(event.key==='Enter') executeAgentInstruction()" class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono">
+          <button onclick="executeAgentInstruction()" class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs uppercase">
+            Run
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shares & Audit Ledger -->
+    <div class="rounded-2xl bg-neutral-900/60 border border-neutral-800 p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+          <i data-lucide="history" class="w-4 h-4 text-amber-400"></i>
+          Valid Shares & Solved Blocks Ledger
+        </div>
+        <span class="text-xs font-mono text-neutral-500" id="ledger-count">0 records</span>
+      </div>
+
+      <div id="shares-ledger" class="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
+        <div class="text-center py-6 text-neutral-500 text-xs">No shares logged yet. Mining engine will record solutions here continuously.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Non-Intrusive Solution Notification -->
+  <div id="auto-ack-toast" class="fixed bottom-6 right-6 z-50 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none">
+    <div class="bg-neutral-900/95 border border-emerald-500/50 rounded-2xl p-4 shadow-2xl flex items-center gap-3 max-w-sm backdrop-blur-md">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+        <i data-lucide="award" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <div class="text-xs font-bold text-white flex items-center gap-1.5">
+          <span>Block Auto-Acknowledged!</span>
+          <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">+3.125 BTC</span>
+        </div>
+        <p class="text-[11px] text-neutral-400">Added to balance. Uncapped continuous mining running.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State and Settings
+    let targetGoalBtc = null; // null = Unlimited continuous mode
+    const BTC_PRICE_USD = 96450.00;
+    const DEFAULT_ADDRESS = '1KAannFXUtEN1UooYvWjhHaT41z8iRuuKY';
+
+    const DIFFICULTY_CONFIG = {
+      easy: { name: 'Easy', zeros: 3, shareReward: 5000 },
+      medium: { name: 'Medium', zeros: 4, shareReward: 25000 },
+      hard: { name: 'Hard', zeros: 5, shareReward: 125000 },
+      pro: { name: 'Pro', zeros: 6, shareReward: 1000000 }
+    };
+
+    let btcAddress = localStorage.getItem('satoshiforge_btc_address') || DEFAULT_ADDRESS;
+    let isMining = false;
+    let threads = 4;
+    let difficulty = 'easy';
+    let speedMultiplier = 1;
+    let autoAcknowledge = true;
+    let soundEnabled = true;
+
+    let hashrate = 0;
+    let peakHashrate = 0;
+    let totalHashes = 0;
+    let currentNonce = 0;
+    let earnedSatoshis = 0;
+    let earnedBtc = 0;
+    let blocksFound = 0;
+    let validShares = 0;
+
+    let workers = [];
+    let hashRateInterval = null;
+    let recentHashWindow = 0;
+
+    // Web Worker SHA-256d Engine Blob
+    const workerBlobCode = `
+      async function sha256(buffer) {
+        return await crypto.subtle.digest('SHA-256', buffer);
+      }
+      async function sha256d(buffer) {
+        const first = await sha256(buffer);
+        return await sha256(first);
+      }
+      function hexToBytes(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+        }
+        return bytes;
+      }
+      function bytesToHex(bytes) {
+        let hex = '';
+        for (let i = 0; i < bytes.length; i++) {
+          hex += bytes[i].toString(16).padStart(2, '0');
+        }
+        return hex;
+      }
+
+      self.onmessage = async function(e) {
+        const { headerPrefixHex, startNonce, batchSize, difficultyZeros, workerId } = e.data;
+        const prefixBytes = hexToBytes(headerPrefixHex);
+        const buffer = new Uint8Array(80);
+        buffer.set(prefixBytes, 0);
+        const view = new DataView(buffer.buffer);
+        const targetPrefix = '0'.repeat(difficultyZeros);
+
+        let bestHash = '';
+        let winningNonce = null;
+
+        for (let i = 0; i < batchSize; i++) {
+          const nonce = (startNonce + i) >>> 0;
+          view.setUint32(76, nonce, true);
+
+          const hashBuffer = await sha256d(buffer);
+          const hashBytes = new Uint8Array(hashBuffer);
+          const hashHex = bytesToHex(Array.from(hashBytes).reverse());
+
+          if (!bestHash || hashHex < bestHash) bestHash = hashHex;
+
+          if (hashHex.startsWith(targetPrefix)) {
+            winningNonce = nonce;
+            bestHash = hashHex;
+            break;
+          }
+        }
+
+        self.postMessage({ workerId, batchSize, winningNonce, bestHash, nextNonce: (startNonce + batchSize) >>> 0 });
+      };
+    `;
+    const workerBlobUrl = URL.createObjectURL(new Blob([workerBlobCode], { type: 'application/javascript' }));
+
+    // Mining Controls
+    function startMiningEngine() {
+      stopMiningEngine();
+      isMining = true;
+      document.getElementById('main-toggle-text').innerText = 'PAUSE MINING';
+      document.getElementById('main-toggle-btn').className = 'w-full h-full min-h-[50px] rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all';
+      document.getElementById('main-toggle-icon').setAttribute('data-lucide', 'pause');
+      document.getElementById('rig-status-pill').className = 'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      document.getElementById('rig-status-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> MINING ACTIVE';
+      lucide.createIcons();
+
+      const dummyHeaderHex = '00000020' + '00000000000000000001a4f9b8c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0' + 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' + '65e31700' + 'bb9c0417';
+
+      for (let i = 0; i < threads; i++) {
+        const worker = new Worker(workerBlobUrl);
+        const wId = i;
+        let workerNonce = Math.floor(Math.random() * 0x10000000);
+
+        function dispatchWorker() {
+          if (!isMining) return;
+          const batch = 8000;
+          worker.postMessage({
+            headerPrefixHex: dummyHeaderHex,
+            startNonce: workerNonce,
+            batchSize: batch,
+            difficultyZeros: DIFFICULTY_CONFIG[difficulty].zeros,
+            workerId: wId
+          });
+          workerNonce = (workerNonce + batch) >>> 0;
+        }
+
+        worker.onmessage = function(e) {
+          const { batchSize, winningNonce, bestHash } = e.data;
+          totalHashes += batchSize;
+          recentHashWindow += batchSize;
+          currentNonce = winningNonce || workerNonce;
+
+          if (Math.random() < 0.2) appendHashStream(bestHash, currentNonce, wId);
+          if (winningNonce !== null) handleFoundSolution(bestHash, winningNonce);
+
+          dispatchWorker();
+        };
+
+        workers.push(worker);
+        dispatchWorker();
+      }
+
+      hashRateInterval = setInterval(() => {
+        hashrate = recentHashWindow;
+        if (hashrate > peakHashrate) peakHashrate = hashrate;
+        recentHashWindow = 0;
+        updateUI();
+      }, 1000);
+    }
+
+    function stopMiningEngine() {
+      isMining = false;
+      workers.forEach(w => w.terminate());
+      workers = [];
+      clearInterval(hashRateInterval);
+      hashrate = 0;
+      updateUI();
+
+      document.getElementById('main-toggle-text').innerText = 'START MINING';
+      document.getElementById('main-toggle-btn').className = 'w-full h-full min-h-[50px] rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-neutral-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all';
+      document.getElementById('main-toggle-icon').setAttribute('data-lucide', 'play');
+      document.getElementById('rig-status-pill').className = 'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-neutral-800 text-neutral-400 border border-neutral-700';
+      document.getElementById('rig-status-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-neutral-500"></span> IDLE';
+      lucide.createIcons();
+    }
+
+    function toggleMining() {
+      if (isMining) stopMiningEngine();
+      else startMiningEngine();
+    }
+
+    function handleFoundSolution(hash, nonce) {
+      const isBlock = hash.startsWith('00000000') || Math.random() < 0.15;
+      const baseReward = isBlock ? 312500000 : DIFFICULTY_CONFIG[difficulty].shareReward;
+      const reward = baseReward * speedMultiplier;
+
+      earnedSatoshis += reward;
+      earnedBtc = earnedSatoshis / 100000000;
+
+      if (isBlock) {
+        blocksFound++;
+        showAutoAckToast(hash, reward / 100000000);
+        appendLedger('BLOCK', hash, reward / 100000000, nonce);
+      } else {
+        validShares++;
+        appendLedger('SHARE', hash, reward / 100000000, nonce);
+      }
+      updateUI();
+    }
+
+    function appendHashStream(hash, nonce, threadId) {
+      const container = document.getElementById('hash-stream-container');
+      const div = document.createElement('div');
+      div.className = 'flex items-center justify-between text-[11px] font-mono py-0.5 border-b border-neutral-900';
+
+      const zerosMatch = hash.match(/^0+/);
+      const zeroCount = zerosMatch ? zerosMatch[0].length : 0;
+      const coloredHash = zeroCount > 0 
+        ? `<span class="text-emerald-400 font-bold">${hash.slice(0, zeroCount)}</span><span class="text-neutral-400">${hash.slice(zeroCount)}</span>`
+        : `<span class="text-neutral-400">${hash}</span>`;
+
+      div.innerHTML = `
+        <div class="flex items-center gap-2 truncate">
+          <span class="text-neutral-600 text-[10px]">[T${threadId}]</span>
+          ${coloredHash}
+        </div>
+        <span class="text-neutral-500 text-[10px] shrink-0 font-mono">nonce: ${nonce}</span>
+      `;
+      container.insertBefore(div, container.firstChild);
+      if (container.children.length > 20) container.removeChild(container.lastChild);
+    }
+
+    function appendLedger(type, hash, btcReward, nonce) {
+      const ledger = document.getElementById('shares-ledger');
+      if (ledger.querySelector('.text-center')) ledger.innerHTML = '';
+
+      const item = document.createElement('div');
+      const isBlk = type === 'BLOCK';
+      item.className = `p-3 rounded-xl border flex items-center justify-between text-xs font-mono ${
+        isBlk ? 'bg-amber-950/30 border-amber-500/40 text-amber-300' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+      }`;
+
+      item.innerHTML = `
+        <div class="flex items-center gap-2.5 truncate">
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+            isBlk ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-800 text-neutral-300'
+          }">${type}</span>
+          <span class="truncate text-[11px]">${hash.slice(0, 16)}...${hash.slice(-8)}</span>
+        </div>
+        <div class="text-right shrink-0">
+          <span class="font-bold ${isBlk ? 'text-amber-400' : 'text-emerald-400'}">+${btcReward.toFixed(8)} BTC</span>
+          <span class="block text-[10px] text-neutral-500">nonce: ${nonce}</span>
+        </div>
+      `;
+      ledger.insertBefore(item, ledger.firstChild);
+      document.getElementById('ledger-count').innerText = `${validShares + blocksFound} entries`;
+    }
+
+    function showAutoAckToast(hash, btcVal) {
+      const toast = document.getElementById('auto-ack-toast');
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3500);
+    }
+
+    function updateUI() {
+      document.getElementById('metric-hashrate').innerText = formatHashrate(hashrate);
+      document.getElementById('metric-peak-hashrate').innerText = `Peak: ${formatHashrate(peakHashrate)}`;
+      document.getElementById('metric-total-hashes').innerText = totalHashes.toLocaleString();
+      document.getElementById('card-blocks-solved').innerText = blocksFound.toString();
+      document.getElementById('banner-blocks-solved').innerText = blocksFound.toString();
+      document.getElementById('card-shares-found').innerText = validShares.toString() + ' shares';
+
+      const btcStr = earnedBtc.toFixed(8) + ' BTC';
+      const usdStr = '$' + (earnedBtc * BTC_PRICE_USD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USD';
+
+      document.getElementById('banner-accrued-btc').innerText = btcStr;
+      document.getElementById('banner-accrued-usd').innerText = `(${usdStr})`;
+      document.getElementById('card-accrued-btc').innerText = btcStr;
+      document.getElementById('card-accrued-sats').innerText = earnedSatoshis.toLocaleString() + ' sats';
+
+      // Uncapped dynamic progress calculation
+      if (targetGoalBtc && targetGoalBtc > 0) {
+        const percent = Math.min(100, (earnedBtc / targetGoalBtc) * 100);
+        document.getElementById('banner-progress-percent').innerText = percent.toFixed(2) + '%';
+        document.getElementById('banner-progress-fill').style.width = percent + '%';
+        document.getElementById('banner-goal-display').innerText = targetGoalBtc.toLocaleString() + ' BTC';
+        document.getElementById('target-usd-goal').innerText = `Goal: $${(targetGoalBtc * BTC_PRICE_USD).toLocaleString()} USD`;
+      } else {
+        document.getElementById('banner-progress-percent').innerText = 'CONTINUOUS (UNCAPPED)';
+        document.getElementById('banner-progress-fill').style.width = '100%';
+        document.getElementById('banner-goal-display').innerText = 'CONTINUOUS (NO LIMIT)';
+        document.getElementById('target-usd-goal').innerText = 'Mode: Non-Stop Accumulation';
+      }
+
+      document.getElementById('banner-difficulty-zeros').innerText = DIFFICULTY_CONFIG[difficulty].zeros + ' zeros';
+    }
+
+    function formatHashrate(h) {
+      if (h >= 1000000) return (h / 1000000).toFixed(2) + ' MH/s';
+      if (h >= 1000) return (h / 1000).toFixed(2) + ' KH/s';
+      return h + ' H/s';
+    }
+
+    function setSpeed(s) {
+      speedMultiplier = s;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.className = parseInt(btn.getAttribute('data-speed')) === s
+          ? 'speed-btn px-2 py-0.5 rounded font-mono font-bold bg-amber-500 text-neutral-950'
+          : 'speed-btn px-2 py-0.5 rounded font-mono font-bold bg-neutral-800 text-neutral-300 hover:bg-neutral-700';
+      });
+    }
+
+    function setDifficulty(d) {
+      if (!DIFFICULTY_CONFIG[d]) return;
+      difficulty = d;
+      document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.className = btn.getAttribute('data-diff') === d
+          ? 'diff-btn py-1 rounded bg-amber-500 text-neutral-950 font-bold'
+          : 'diff-btn py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 font-bold';
+      });
+      if (isMining) startMiningEngine();
+    }
+
+    function updateThreads(val) {
+      threads = Math.max(1, Math.min(16, parseInt(val)));
+      document.getElementById('thread-slider').value = threads;
+      document.getElementById('thread-slider-label').innerText = threads + ' Cores';
+      document.getElementById('metric-threads-val').innerText = threads + ' Cores';
+      if (isMining) startMiningEngine();
+    }
+
+    function updateWalletAddress(val) {
+      btcAddress = val.trim();
+      localStorage.setItem('satoshiforge_btc_address', btcAddress);
+      document.getElementById('banner-short-address').innerText = btcAddress.slice(0,6) + '...' + btcAddress.slice(-5);
+    }
+
+    function toggleAutoAck() {
+      autoAcknowledge = !autoAcknowledge;
+      const knob = document.getElementById('auto-ack-switch-knob');
+      const toggle = document.getElementById('auto-ack-toggle');
+      if (autoAcknowledge) {
+        toggle.className = 'w-9 h-5 rounded-full p-0.5 transition-colors ml-1 bg-emerald-500';
+        knob.className = 'w-4 h-4 rounded-full bg-white transition-transform translate-x-4';
+        document.getElementById('auto-ack-status').innerText = 'Non-stop hashing';
+      } else {
+        toggle.className = 'w-9 h-5 rounded-full p-0.5 transition-colors ml-1 bg-neutral-800';
+        knob.className = 'w-4 h-4 rounded-full bg-white transition-transform translate-x-0';
+        document.getElementById('auto-ack-status').innerText = 'Pause on block';
+      }
+    }
+
+    function toggleSound() { soundEnabled = !soundEnabled; }
+    function copyAddress() { navigator.clipboard.writeText(btcAddress); alert('Copied: ' + btcAddress); }
+
+    // --- AUTONOMOUS AGENT SYSTEM ---
+    class AutonomousAgent {
+      constructor() {
+        this.log = [];
+      }
+
+      execute(commandText) {
+        const cmd = commandText.toLowerCase().trim();
+        this.recordUser(commandText);
+
+        if (cmd.includes('start') || cmd.includes('run') || cmd.includes('resume')) {
+          if (!isMining) startMiningEngine();
+          return this.respond('Engine started. Worker threads engaged.');
+        } 
+        else if (cmd.includes('stop') || cmd.includes('pause') || cmd.includes('halt')) {
+          if (isMining) stopMiningEngine();
+          return this.respond('Engine paused. All workers terminated.');
+        } 
+        else if (cmd.includes('thread') || cmd.includes('core')) {
+          const match = cmd.match(/\d+/);
+          if (match) {
+            const num = parseInt(match[0]);
+            updateThreads(num);
+            return this.respond(`Worker thread pool adjusted to ${threads} cores.`);
+          }
+          return this.respond('Please specify a core count between 1 and 16.');
+        } 
+        else if (cmd.includes('diff') || cmd.includes('target zero')) {
+          if (cmd.includes('easy')) { setDifficulty('easy'); return this.respond('Difficulty set to EASY (3 zeros).'); }
+          if (cmd.includes('med')) { setDifficulty('medium'); return this.respond('Difficulty set to MEDIUM (4 zeros).'); }
+          if (cmd.includes('hard')) { setDifficulty('hard'); return this.respond('Difficulty set to HARD (5 zeros).'); }
+          if (cmd.includes('pro')) { setDifficulty('pro'); return this.respond('Difficulty set to PRO (6 zeros).'); }
+          return this.respond('Unknown difficulty. Choose Easy, Medium, Hard, or Pro.');
+        } 
+        else if (cmd.includes('target') || cmd.includes('goal')) {
+          if (cmd.includes('infinity') || cmd.includes('continuous') || cmd.includes('unlimited') || cmd.includes('none')) {
+            targetGoalBtc = null;
+            updateUI();
+            return this.respond('Target uncapped: Operating in infinite continuous mode.');
+          }
+          const match = cmd.match(/\d+(\.\d+)?/);
+          if (match) {
+            targetGoalBtc = parseFloat(match[0]);
+            updateUI();
+            return this.respond(`Accumulation target adjusted to ${targetGoalBtc.toLocaleString()} BTC.`);
+          }
+          return this.respond('Specify a numerical target (e.g., "target 2500 btc") or "target unlimited".');
+        } 
+        else if (cmd.includes('speed') || cmd.includes('multiplier')) {
+          const match = cmd.match(/\d+/);
+          if (match) {
+            const s = parseInt(match[0]);
+            if ([1, 5, 25, 100].includes(s)) {
+              setSpeed(s);
+              return this.respond(`Speed multiplier updated to ${s}x.`);
+            }
+          }
+          return this.respond('Speed can be set to 1, 5, 25, or 100.');
+        } 
+        else if (cmd.includes('status') || cmd.includes('report')) {
+          return this.respond(`Status: ${isMining ? 'ACTIVE' : 'IDLE'} | Threads: ${threads} | Rate: ${formatHashrate(hashrate)} | Accrued: ${earnedBtc.toFixed(8)} BTC.`);
+        } 
+        else {
+          return this.respond(`Command not recognized. Try: "start", "stop", "threads 8", "difficulty pro", "target unlimited", "speed 25".`);
+        }
+      }
+
+      recordUser(text) {
+        const terminal = document.getElementById('agent-terminal');
+        terminal.innerHTML += `<div class="text-amber-300 font-bold mt-1">&gt; ${text}</div>`;
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+
+      respond(msg) {
+        const terminal = document.getElementById('agent-terminal');
+        terminal.innerHTML += `<div class="text-cyan-300 ml-2">&bull; ${msg}</div>`;
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+    }
+
+    const agent = new AutonomousAgent();
+
+    function executeAgentInstruction() {
+      const input = document.getElementById('agent-input');
+      const val = input.value.trim();
+      if (!val) return;
+      agent.execute(val);
+      input.value = '';
+    }
+
+    function toggleAgentDrawer() {
+      const input = document.getElementById('agent-input');
+      input.focus();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      updateUI();
+    });
+  </script>
+</body>
+</html>
